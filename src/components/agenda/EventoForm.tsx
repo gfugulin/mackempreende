@@ -3,11 +3,11 @@
 import { useForm, useFieldArray } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { eventoSchema, type EventoInput, TipoEventoEnum, type PalestranteVinculado } from '@/lib/validations/eventos'
-import { createEvento, updateEvento, deleteEvento } from '@/app/actions/eventos'
+import { createEvento, updateEvento, deleteEvento, createSessao, deleteSessao } from '@/app/actions/eventos'
 import { uploadArquivoAction } from '@/app/actions/arquivos'
 import { searchPalestrantesByName } from '@/app/actions/palestrantes'
 import { useState, useRef, useEffect, useCallback } from 'react'
-import { Loader2, Calendar, MapPin, Users, CheckCircle2, Plus, Trash2, Building2, UserPlus, ShieldPlus, Upload, ExternalLink, Search, X, FileText, Store, AlertTriangle } from 'lucide-react'
+import { Loader2, Calendar, MapPin, Users, CheckCircle2, Plus, Trash2, Building2, UserPlus, ShieldPlus, Upload, ExternalLink, Search, X, FileText, Store, AlertTriangle, ListOrdered, Clock } from 'lucide-react'
 import { Database } from '@/types/database'
 import { useRouter } from 'next/navigation'
 
@@ -35,6 +35,15 @@ export default function EventoForm({ initialData, currentSquad, onSuccess }: Eve
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
   const [message, setMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null)
   const [uploadingLogos, setUploadingLogos] = useState<Record<number, boolean>>({})
+
+  // Cronograma (sessões) state
+  const [sessoes, setSessoes] = useState<any[]>((initialData as any)?.sessoes || [])
+  const [showSessaoForm, setShowSessaoForm] = useState(false)
+  const [sessaoData, setSessaoData] = useState({ titulo: '', data_inicio: '', local: '', descricao: '' })
+  const [isSavingSessao, setIsSavingSessao] = useState(false)
+  const [isDeletingSessao, setIsDeletingSessao] = useState<string | null>(null)
+  const isEditMode = !!initialData
+  const isSessao = !!(initialData as any)?.evento_pai_id
 
   // Search state for speaker autocomplete
   const [searchQuery, setSearchQuery] = useState('')
@@ -598,6 +607,173 @@ export default function EventoForm({ initialData, currentSquad, onSuccess }: Eve
               )}
             </div>
           </section>
+
+          {/* Seção de Cronograma (Sessões) — apenas para edição de eventos-pai */}
+          {isEditMode && !isSessao && (
+            <section className="bg-white p-6 md:p-8 rounded-[40px] border border-gray-100 shadow-sm space-y-6">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-2xl bg-indigo-50 flex items-center justify-center text-indigo-600">
+                    <ListOrdered className="h-5 w-5" />
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-black text-gray-900 uppercase tracking-tight">Cronograma</h3>
+                    <p className="text-[9px] font-bold text-gray-400 uppercase tracking-wider">Sessões, palestras e atividades internas</p>
+                  </div>
+                </div>
+                {!showSessaoForm && (
+                  <button
+                    type="button"
+                    onClick={() => setShowSessaoForm(true)}
+                    className="flex items-center gap-2 px-5 py-2 bg-indigo-600 text-white rounded-2xl text-xs font-black hover:bg-indigo-700 transition-all shadow-lg shadow-indigo-600/20"
+                  >
+                    <Plus className="h-4 w-4" /> SESSÃO
+                  </button>
+                )}
+              </div>
+
+              {/* Form inline para nova sessão */}
+              {showSessaoForm && (
+                <div className="p-5 rounded-[28px] border-2 border-dashed border-indigo-200 bg-indigo-50/30 space-y-4 animate-in fade-in slide-in-from-top-2 duration-300">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="space-y-1">
+                      <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest pl-1">Título da Sessão *</label>
+                      <input
+                        value={sessaoData.titulo}
+                        onChange={e => setSessaoData(s => ({ ...s, titulo: e.target.value }))}
+                        className="w-full px-4 py-3 rounded-xl border border-gray-100 bg-white text-sm font-black outline-none focus:ring-2 focus:ring-indigo-200"
+                        placeholder="Ex: Influencers e Negócios"
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest pl-1">Data e Horário *</label>
+                      <input
+                        type="datetime-local"
+                        value={sessaoData.data_inicio}
+                        onChange={e => setSessaoData(s => ({ ...s, data_inicio: e.target.value }))}
+                        className="w-full px-4 py-3 rounded-xl border border-gray-100 bg-white text-sm font-black outline-none focus:ring-2 focus:ring-indigo-200"
+                      />
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="space-y-1">
+                      <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest pl-1">Local</label>
+                      <input
+                        value={sessaoData.local}
+                        onChange={e => setSessaoData(s => ({ ...s, local: e.target.value }))}
+                        className="w-full px-4 py-2.5 rounded-xl border border-gray-100 bg-white text-xs font-bold outline-none"
+                        placeholder="Ex: Auditório Principal"
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest pl-1">Descrição</label>
+                      <input
+                        value={sessaoData.descricao}
+                        onChange={e => setSessaoData(s => ({ ...s, descricao: e.target.value }))}
+                        className="w-full px-4 py-2.5 rounded-xl border border-gray-100 bg-white text-xs font-bold outline-none"
+                        placeholder="Breve descrição da sessão"
+                      />
+                    </div>
+                  </div>
+                  <div className="flex gap-2 pt-2">
+                    <button
+                      type="button"
+                      disabled={isSavingSessao}
+                      onClick={async () => {
+                        if (!sessaoData.titulo || !sessaoData.data_inicio) return
+                        setIsSavingSessao(true)
+                        const res = await createSessao(initialData!.id, {
+                          titulo: sessaoData.titulo,
+                          data_inicio: sessaoData.data_inicio,
+                          local: sessaoData.local || null,
+                          descricao: sessaoData.descricao || null,
+                          ordem: sessoes.length,
+                          metadata: { palestrantes: [] },
+                        } as any)
+                        setIsSavingSessao(false)
+                        if (res.success) {
+                          setSessaoData({ titulo: '', data_inicio: '', local: '', descricao: '' })
+                          setShowSessaoForm(false)
+                          // Reload page to refresh sessoes
+                          window.location.reload()
+                        }
+                      }}
+                      className="flex items-center gap-2 px-6 py-2.5 bg-indigo-600 text-white rounded-xl text-xs font-black hover:bg-indigo-700 disabled:opacity-50 transition-all"
+                    >
+                      {isSavingSessao ? <Loader2 className="h-3 w-3 animate-spin" /> : <Plus className="h-3 w-3" />}
+                      Salvar Sessão
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setShowSessaoForm(false)
+                        setSessaoData({ titulo: '', data_inicio: '', local: '', descricao: '' })
+                      }}
+                      className="px-5 py-2.5 bg-white border border-gray-200 rounded-xl text-xs font-black text-gray-500 hover:bg-gray-50 transition-all"
+                    >
+                      Cancelar
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {/* Lista de sessões existentes */}
+              {sessoes.length > 0 ? (
+                <div className="space-y-2">
+                  {sessoes.map((s: any, idx: number) => {
+                    const sDate = new Date(s.data_inicio)
+                    const sMeta = s.metadata || {}
+                    const sSpeakers = sMeta.palestrantes || []
+                    return (
+                      <div key={s.id} className="flex items-center gap-4 px-4 py-3 rounded-2xl border border-gray-100 bg-gray-50/50 group hover:border-indigo-200 transition-all">
+                        <div className="w-8 h-8 rounded-xl bg-indigo-100 flex items-center justify-center text-indigo-600 text-xs font-black shrink-0">
+                          {idx + 1}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="font-black text-sm text-gray-900 truncate">{s.titulo}</p>
+                          <div className="flex items-center gap-3 mt-0.5">
+                            <span className="text-[10px] font-bold text-gray-400 flex items-center gap-1">
+                              <Clock className="h-3 w-3" />
+                              {sDate.toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' })} {sDate.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
+                            </span>
+                            {s.local && (
+                              <span className="text-[10px] font-bold text-gray-400 flex items-center gap-1">
+                                <MapPin className="h-3 w-3" /> {s.local}
+                              </span>
+                            )}
+                            {sSpeakers.length > 0 && (
+                              <span className="text-[10px] font-bold text-indigo-500 flex items-center gap-1">
+                                <Users className="h-3 w-3" /> {sSpeakers.map((p: any) => p.nome).join(', ')}
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                        <button
+                          type="button"
+                          disabled={isDeletingSessao === s.id}
+                          onClick={async () => {
+                            setIsDeletingSessao(s.id)
+                            const res = await deleteSessao(s.id)
+                            if (res.success) {
+                              setSessoes(prev => prev.filter(x => x.id !== s.id))
+                            }
+                            setIsDeletingSessao(null)
+                          }}
+                          className="p-1.5 text-gray-300 hover:text-red-500 transition-colors opacity-0 group-hover:opacity-100"
+                        >
+                          {isDeletingSessao === s.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
+                        </button>
+                      </div>
+                    )
+                  })}
+                </div>
+              ) : !showSessaoForm ? (
+                <div className="py-8 text-center text-gray-300 font-bold border-2 border-dashed border-indigo-100 rounded-3xl text-sm">
+                  Nenhuma sessão no cronograma. Clique em "+ SESSÃO" para adicionar.
+                </div>
+              ) : null}
+            </section>
+          )}
         </div>
 
         {/* Coluna Direita: Datas e Ação */}

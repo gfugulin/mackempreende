@@ -50,6 +50,7 @@ export interface Database {
       eventos: {
         Row: {
           id: string;
+          evento_pai_id: string | null;
           titulo: string;
           descricao: string | null;
           data_inicio: string;
@@ -61,6 +62,7 @@ export interface Database {
           palestrante_id: string | null;
           vagas: number | null;
           confirmado: boolean;
+          ordem: number;
           metadata: any;
           criado_em: string;
           atualizado_em: string;

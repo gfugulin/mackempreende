@@ -1,7 +1,7 @@
 'use server'
 
 import { createClient } from '@/lib/supabase/server'
-import { eventoSchema, type EventoInput } from '@/lib/validations/eventos'
+import { eventoSchema, sessaoSchema, type EventoInput, type SessaoInput } from '@/lib/validations/eventos'
 import { revalidatePath } from 'next/cache'
 import { Database } from '@/types/database'
 import { SupabaseClient } from '@supabase/supabase-js'
@@ -85,6 +85,7 @@ export async function getEventos(filters?: { squad?: string; hidePast?: boolean 
   let query = supabase
     .from('eventos')
     .select('*, palestrantes(nome, empresa, cargo)')
+    .is('evento_pai_id', null) // Sessões ficam escondidas da timeline
     .order('data_inicio', { ascending: true })
 
   if (filters?.squad) {
@@ -102,7 +103,31 @@ export async function getEventos(filters?: { squad?: string; hidePast?: boolean 
     return []
   }
 
-  return data
+  // Enriquece eventos-pai com contagem de sessões
+  const eventIds = (data || []).map((e: any) => e.id)
+  if (eventIds.length > 0) {
+    const { data: sessoes } = await supabase
+      .from('eventos')
+      .select('evento_pai_id, id, titulo, data_inicio, local, metadata')
+      .in('evento_pai_id', eventIds)
+      .order('ordem', { ascending: true })
+      .order('data_inicio', { ascending: true })
+
+    // Agrupa sessões por pai
+    const sessoesMap: Record<string, any[]> = {}
+    for (const s of (sessoes || [])) {
+      const paiId = (s as any).evento_pai_id
+      if (!sessoesMap[paiId]) sessoesMap[paiId] = []
+      sessoesMap[paiId].push(s)
+    }
+
+    return (data || []).map((e: any) => ({
+      ...e,
+      sessoes: sessoesMap[e.id] || [],
+    }))
+  }
+
+  return (data || []).map((e: any) => ({ ...e, sessoes: [] }))
 }
 
 /**
@@ -111,6 +136,7 @@ export async function getEventos(filters?: { squad?: string; hidePast?: boolean 
 export async function getEventoById(id: string) {
   const supabase = (await createClient()) as SupabaseClient<Database>
   
+  // Busca o evento principal
   const { data, error } = await supabase
     .from('eventos')
     .select('*, palestrantes(*)')
@@ -122,7 +148,15 @@ export async function getEventoById(id: string) {
     return null
   }
 
-  return data
+  // Busca sessões filhas (cronograma)
+  const { data: sessoes } = await supabase
+    .from('eventos')
+    .select('*, palestrantes(nome, empresa, cargo)')
+    .eq('evento_pai_id', id)
+    .order('ordem', { ascending: true })
+    .order('data_inicio', { ascending: true })
+
+  return { ...(data as any), sessoes: sessoes || [] }
 }
 
 /**
@@ -194,7 +228,7 @@ export async function toggleConfirmacao(id: string, currentStatus: boolean) {
 }
 
 /**
- * Exclui um evento da agenda.
+ * Exclui um evento da agenda (sessões filhas são deletadas via CASCADE).
  */
 export async function deleteEvento(id: string) {
   const supabase = (await createClient()) as SupabaseClient<Database>
@@ -207,5 +241,97 @@ export async function deleteEvento(id: string) {
   if (error) return { error: 'Erro ao excluir evento.' }
 
   revalidatePath('/agenda')
+  return { success: true }
+}
+
+
+// ═══════════════════════════════════════════════════════════════
+// CRUD DE SESSÕES (Cronograma)
+// ═══════════════════════════════════════════════════════════════
+
+/**
+ * Cria uma sessão dentro de um evento-pai.
+ * Herda squad e tipo do pai automaticamente.
+ */
+export async function createSessao(eventoPaiId: string, data: SessaoInput) {
+  const supabase = (await createClient()) as SupabaseClient<Database>
+
+  const result = sessaoSchema.safeParse(data)
+  if (!result.success) {
+    return { error: 'Dados inválidos para a sessão.' }
+  }
+
+  // Busca dados do pai para herdar squad/tipo
+  const { data: pai } = await supabase
+    .from('eventos')
+    .select('squad, tipo')
+    .eq('id', eventoPaiId)
+    .single()
+
+  const paiData = pai as any
+  if (!paiData) return { error: 'Evento-pai não encontrado.' }
+
+  const { error } = await (supabase.from('eventos') as any)
+    .insert([{
+      ...result.data,
+      evento_pai_id: eventoPaiId,
+      squad: paiData.squad,
+      tipo: paiData.tipo,
+      confirmado: true,
+    }])
+
+  if (error) {
+    console.error('Error creating session:', error)
+    return { error: 'Erro ao criar sessão.' }
+  }
+
+  // Sincronizar palestrantes novos
+  const palestrantes = result.data.metadata?.palestrantes || []
+  for (const p of palestrantes) {
+    if (!p.id && p.nome && p.nome.trim().length >= 2) {
+      const nomeLimpo = p.nome.trim()
+      const { data: existing } = await (supabase as any)
+        .from('palestrantes')
+        .select('id')
+        .ilike('nome', nomeLimpo)
+        .single()
+      if (!existing) {
+        await (supabase as any)
+          .from('palestrantes')
+          .insert([{ nome: nomeLimpo, empresa: p.empresa || null, squad_resp: paiData.squad, status: 'confirmado' }])
+      }
+    }
+  }
+
+  revalidatePath('/agenda')
+  revalidatePath(`/agenda/${eventoPaiId}/editar`)
+  return { success: true }
+}
+
+/**
+ * Exclui uma sessão individual.
+ */
+export async function deleteSessao(sessaoId: string) {
+  const supabase = (await createClient()) as SupabaseClient<Database>
+
+  // Buscar pai para revalidar
+  const { data: sessao } = await supabase
+    .from('eventos')
+    .select('evento_pai_id')
+    .eq('id', sessaoId)
+    .single()
+
+  const { error } = await supabase
+    .from('eventos')
+    .delete()
+    .eq('id', sessaoId)
+
+  if (error) return { error: 'Erro ao excluir sessão.' }
+
+  revalidatePath('/agenda')
+  const sessaoData = sessao as any
+  if (sessaoData?.evento_pai_id) {
+    revalidatePath(`/agenda/${sessaoData.evento_pai_id}/editar`)
+  }
   return { success: true }
 }

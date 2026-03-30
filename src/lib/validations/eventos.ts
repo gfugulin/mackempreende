@@ -54,6 +54,8 @@ export const expositorSchema = z.object({
 export type Expositor = z.infer<typeof expositorSchema>
 
 export const eventoSchema = z.object({
+  evento_pai_id: z.string().uuid().nullable().optional(),
+  ordem: z.number().int().default(0),
   titulo: z.string().min(5, 'O título deve ter pelo menos 5 caracteres'),
   descricao: z.string().optional().nullable(),
   data_inicio: z.string().min(1, 'Início obrigatório').transform(v => new Date(v).toISOString()),
@@ -78,3 +80,20 @@ export const eventoSchema = z.object({
 })
 
 export type EventoInput = z.infer<typeof eventoSchema>
+
+/**
+ * Schema para sessões dentro de um cronograma.
+ * Mais permissivo no título (mín. 2 chars) e focado nos dados essenciais.
+ */
+export const sessaoSchema = z.object({
+  titulo: z.string().min(2, 'Título da sessão obrigatório'),
+  data_inicio: z.string().min(1, 'Horário obrigatório').transform(v => new Date(v).toISOString()),
+  local: z.string().optional().nullable(),
+  descricao: z.string().optional().nullable(),
+  ordem: z.number().int().default(0),
+  metadata: z.object({
+    palestrantes: z.array(palestranteVinculadoSchema).default([]),
+  }).default({ palestrantes: [] }),
+})
+
+export type SessaoInput = z.infer<typeof sessaoSchema>

@@ -1,5 +1,5 @@
 import { Database } from '@/types/database'
-import { Calendar, Clock, MapPin, Video, CheckCircle2, MoreVertical, Briefcase, ExternalLink, Edit2, Users, ShieldPlus, Building2, UserPlus } from 'lucide-react'
+import { Calendar, Clock, MapPin, Video, CheckCircle2, MoreVertical, Briefcase, ExternalLink, Edit2, Users, ShieldPlus, Building2, UserPlus, ListOrdered } from 'lucide-react'
 import { format } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
 import Link from 'next/link'
@@ -10,6 +10,7 @@ type Evento = Database['public']['Tables']['eventos']['Row'] & {
     empresa: string | null;
     cargo: string | null;
   } | null;
+  sessoes?: any[];
 }
 
 interface EventoItemProps {
@@ -47,6 +48,7 @@ export default function EventoItem({ evento, isFirst, isLast }: EventoItemProps)
   const partners = meta.parceiros || []
   const expositores = meta.expositores || []
   const documentos = meta.documentos_importantes || []
+  const sessoes = (evento as any).sessoes || []
 
   return (
     <div className="flex gap-3 sm:gap-6 group animate-in fade-in slide-in-from-left-4 duration-500">
@@ -72,6 +74,11 @@ export default function EventoItem({ evento, isFirst, isLast }: EventoItemProps)
               {evento.confirmado && (
                 <span className="flex items-center gap-1 sm:gap-1.5 text-[8px] sm:text-[10px] font-black text-green-600 bg-green-50 px-2 sm:px-3 py-1 sm:py-1.5 rounded-full border border-green-100">
                   <div className="w-1 h-1 sm:w-1.5 sm:h-1.5 rounded-full bg-green-500 animate-pulse" /> CONFIRMADO
+                </span>
+              )}
+              {sessoes.length > 0 && (
+                <span className="flex items-center gap-1 sm:gap-1.5 text-[8px] sm:text-[10px] font-black text-indigo-600 bg-indigo-50 px-2 sm:px-3 py-1 sm:py-1.5 rounded-full border border-indigo-100">
+                  <ListOrdered className="h-3 w-3" /> {sessoes.length} {sessoes.length === 1 ? 'SESSÃO' : 'SESSÕES'}
                 </span>
               )}
             </div>
@@ -186,6 +193,40 @@ export default function EventoItem({ evento, isFirst, isLast }: EventoItemProps)
                     </div>
                   </div>
                 ))}
+              </div>
+            </div>
+          )}
+
+          {/* Mini Cronograma (Sessões) */}
+          {sessoes.length > 0 && (
+            <div className="mt-6 sm:mt-8 pt-6 border-t border-gray-50">
+              <p className="text-[10px] font-black text-indigo-400 uppercase tracking-[0.15em] mb-3 flex items-center gap-2">
+                <ListOrdered className="h-3.5 w-3.5" /> Cronograma
+              </p>
+              <div className="space-y-1.5">
+                {sessoes.map((s: any, idx: number) => {
+                  const sDate = new Date(s.data_inicio)
+                  const sMeta = s.metadata || {}
+                  const sSpeakers = (sMeta.palestrantes || []).filter((p: any) => !p.is_backup)
+                  return (
+                    <div key={s.id} className="flex items-center gap-3 px-3 py-2 rounded-xl bg-gray-50/70 border border-gray-50 hover:border-indigo-100 transition-all">
+                      <span className="w-6 h-6 rounded-lg bg-indigo-100 flex items-center justify-center text-indigo-600 text-[10px] font-black shrink-0">
+                        {idx + 1}
+                      </span>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-[11px] font-black text-gray-800 truncate">{s.titulo}</p>
+                      </div>
+                      <span className="text-[9px] font-bold text-gray-400 shrink-0">
+                        {format(sDate, "dd/MM HH'h'mm", { locale: ptBR })}
+                      </span>
+                      {sSpeakers.length > 0 && (
+                        <span className="text-[9px] font-bold text-indigo-500 truncate max-w-[80px] sm:max-w-none shrink-0">
+                          {sSpeakers.map((p: any) => p.nome).join(', ')}
+                        </span>
+                      )}
+                    </div>
+                  )
+                })}
               </div>
             </div>
           )}
