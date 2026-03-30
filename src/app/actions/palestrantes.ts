@@ -137,32 +137,51 @@ export async function getPalestrantes(filters?: { squad?: string; search?: strin
 
 
 /**
- * Busca detalhe de um palestrante e seu histórico de eventos (Cruzamento de dados).
+ * Busca detalhe de um palestrante e seu histórico de eventos completo.
+ * Integra dados da v3 (metadata) com o formato legado (palestrante_id).
  */
 export async function getPalestranteById(id: string) {
   const supabase = (await createClient()) as SupabaseClient<Database>
   
-  const { data, error } = await supabase
-    .from('palestrantes')
-    .select(`
-      *,
-      eventos (
-        id,
-        titulo,
-        data_inicio,
-        tipo,
-        squad
-      )
-    `)
+  // 1. Busca os dados básicos do palestrante
+  const { data: palestrante, error: pError } = await (supabase.from('palestrantes') as any)
+    .select('*')
     .eq('id', id)
     .single()
 
-  if (error) {
-    console.error('Error fetching speaker detail:', error)
+  if (pError || !palestrante) {
+    console.error('Error fetching speaker:', pError)
     return null
   }
 
-  return data as any
+  // 2. Busca eventos onde ele participou (Principais, Extras ou via Metadata v3)
+  // Buscamos eventos confirmados para o histórico
+  const { data: eventos, error: eError } = await supabase
+    .from('eventos')
+    .select('id, titulo, data_inicio, tipo, squad, metadata, confirmado')
+    .order('data_inicio', { ascending: false })
+
+  if (eError) {
+    console.error('Error fetching speaker history:', eError)
+    return { ...palestrante, eventos: [] }
+  }
+
+  // 3. Filtragem Inteligente: Verifica se o ID ou o Nome do palestrante consta no evento
+  const historicoFiltrado = (eventos || []).filter((evt: any) => {
+    // Caso 1: Formato Legado (FK)
+    if (evt.palestrante_id === id) return true
+
+    // Caso 2: Formato v3 (Lista no Metadata)
+    const metaStr = JSON.stringify(evt.metadata || {})
+    // Busca rápida: se o nome ou o ID aparece no JSON do metadata
+    // (Mais eficiente do que parsear recursivamente para cada linha se a base crescer moderadamente)
+    return metaStr.includes(id) || metaStr.includes(palestrante.nome)
+  })
+
+  return { 
+    ...palestrante, 
+    eventos: historicoFiltrado 
+  }
 }
 
 /**

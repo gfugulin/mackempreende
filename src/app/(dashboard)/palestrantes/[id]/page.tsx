@@ -15,7 +15,8 @@ import {
   MessageSquare,
   History,
   Award,
-  Users
+  Users,
+  Edit2
 } from 'lucide-react'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
@@ -85,6 +86,16 @@ export default async function PalestranteDetailPage({ params }: Props) {
                  <span className="px-3 py-1 rounded-full bg-red-50 text-[#A32D2D] text-[10px] font-black uppercase tracking-wider">
                    Squad {palestrante.squad_resp}
                  </span>
+               </div>
+
+               <div className="mt-8">
+                 <Link 
+                   href={`/palestrantes/${palestrante.id}/editar`}
+                   className="flex items-center justify-center gap-2 w-full py-4 rounded-2xl bg-[#A32D2D] text-white text-xs font-black uppercase tracking-widest hover:bg-[#8B2626] transition-all shadow-lg shadow-red-200 active:scale-[0.98]"
+                 >
+                   <Edit2 className="h-4 w-4" />
+                   Editar Perfil
+                 </Link>
                </div>
 
                <div className="mt-8 pt-8 border-t border-gray-50 space-y-4">
