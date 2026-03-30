@@ -20,13 +20,13 @@ export default async function AgendaPage({
   const { data: { user } } = await supabase.auth.getUser()
   const currentSquad = user?.email ? getSquadFromEmail(user.email) : 'PEW'
   
-  const squadFilter = params.squad || currentSquad || undefined
+  const squadFilter = params.squad || undefined
   const hidePast = params.hidePast !== 'false'
 
   // Buscamos os eventos para injetar no container client-side
   // @ts-ignore
   const eventosRaw = await getEventos({ 
-    squad: params.squad === 'all' ? undefined : (squadFilter as any),
+    squad: squadFilter as any,
     hidePast 
   })
 

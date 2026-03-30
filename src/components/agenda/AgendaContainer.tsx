@@ -1,7 +1,7 @@
 'use client'
 
-import { useState } from 'react'
-import { LayoutGrid, List, Plus } from 'lucide-react'
+import { useState, useMemo } from 'react'
+import { LayoutGrid, List, Plus, Filter } from 'lucide-react'
 import { format } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
 import Link from 'next/link'
@@ -23,6 +23,12 @@ export default function AgendaContainer({ initialEvents }: AgendaContainerProps)
   const [selectedDay, setSelectedDay] = useState(new Date())
   const [selectedDayEvents, setSelectedDayEvents] = useState<Evento[]>([])
   const [selectedMobileEvents, setSelectedMobileEvents] = useState<Evento[]>([])
+  const [selectedSquad, setSelectedSquad] = useState<string | null>(null)
+
+  const filteredEvents = useMemo(() => {
+    if (!selectedSquad) return initialEvents
+    return initialEvents.filter(e => e.squad === selectedSquad)
+  }, [initialEvents, selectedSquad])
 
   const handleDayClick = (day: Date, dayEvents: Evento[]) => {
     setSelectedDay(day)
@@ -78,12 +84,42 @@ export default function AgendaContainer({ initialEvents }: AgendaContainerProps)
         </div>
       </div>
 
+      {/* Barra de Filtros de Squad */}
+      <div className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-none px-1">
+        <div className="flex items-center gap-2">
+          <Filter className="h-4 w-4 text-gray-400 shrink-0 ml-1 mr-2" />
+        </div>
+        <button
+          onClick={() => setSelectedSquad(null)}
+          className={`shrink-0 px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest transition-all ${
+            selectedSquad === null
+              ? 'bg-gray-900 text-white shadow-md'
+              : 'bg-white text-gray-500 hover:bg-gray-100 border border-gray-100'
+          }`}
+        >
+          Todos
+        </button>
+        {['PEW', 'Podcast', 'Culture', 'Comunica'].map(squad => (
+          <button
+            key={squad}
+            onClick={() => setSelectedSquad(squad)}
+            className={`shrink-0 px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest transition-all ${
+              selectedSquad === squad
+                ? 'bg-[#A32D2D] text-white shadow-md shadow-[#A32D2D]/20'
+                : 'bg-white text-gray-500 hover:bg-red-50 hover:text-[#A32D2D] border border-gray-100'
+            }`}
+          >
+            {squad}
+          </button>
+        ))}
+      </div>
+
       {/* Renderização Condicional da Visão */}
       <div className="animate-in fade-in slide-in-from-bottom-6 duration-700">
         {view === 'calendar' ? (
           <div className="space-y-8">
             <CalendarView 
-              eventos={initialEvents} 
+              eventos={filteredEvents} 
               onDayClick={handleDayClick}
             />
             
@@ -111,12 +147,12 @@ export default function AgendaContainer({ initialEvents }: AgendaContainerProps)
         ) : (
           <div className="space-y-12 pl-4 py-8">
             <div className="relative border-l-4 border-gray-100 space-y-12">
-              {initialEvents.length === 0 ? (
+              {filteredEvents.length === 0 ? (
                 <div className="pl-12 py-10">
-                  <p className="text-gray-400 font-bold">Nenhum evento agendado na timeline.</p>
+                  <p className="text-gray-400 font-bold">Nenhum evento encontrado para este filtro.</p>
                 </div>
               ) : (
-                initialEvents.map((evento) => (
+                filteredEvents.map((evento) => (
                   <EventoItem key={evento.id} evento={evento} />
                 ))
               )}

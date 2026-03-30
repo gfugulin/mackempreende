@@ -118,7 +118,7 @@ export async function getPalestrantes(filters?: { squad?: string; search?: strin
   // 1. Busca palestrantes com eventos vinculados via FK
   let query = supabase
     .from('palestrantes')
-    .select('*, eventos(id, data_inicio, confirmado)')
+    .select('*, eventos(id, data_inicio, confirmado, tipo)')
     .order('nome')
 
   if (filters?.squad) {
@@ -139,7 +139,7 @@ export async function getPalestrantes(filters?: { squad?: string; search?: strin
   // 2. Busca TODOS os eventos para cruzar com metadata (co-palestrantes)
   const { data: todosEventos } = await supabase
     .from('eventos')
-    .select('id, data_inicio, confirmado, metadata, palestrante_id')
+    .select('id, data_inicio, confirmado, metadata, palestrante_id, tipo')
 
   if (!todosEventos || todosEventos.length === 0) {
     return palestrantes as any[]
@@ -167,7 +167,8 @@ export async function getPalestrantes(filters?: { squad?: string; search?: strin
       ...metadataEvents.map((e: any) => ({
         id: e.id,
         data_inicio: e.data_inicio,
-        confirmado: e.confirmado
+        confirmado: e.confirmado,
+        tipo: e.tipo
       }))
     ]
 

@@ -4,7 +4,7 @@ import Link from 'next/link'
 import { computeDisplayStatus } from '@/lib/utils/status'
 
 type Palestrante = Database['public']['Tables']['palestrantes']['Row'] & {
-  eventos?: { id: string; data_inicio: string; confirmado: boolean }[]
+  eventos?: { id: string; data_inicio: string; confirmado: boolean; tipo?: string }[]
 }
 
 const STATUS_CONFIG: Record<string, { label: string; color: string }> = {
@@ -46,9 +46,15 @@ export default function PalestranteCard({ palestrante }: { palestrante: Palestra
             </span>
             {displayStatus.count > 0 && (
               <span className="text-[9px] font-black text-gray-400 uppercase tracking-tight">
-                {displayStatus.count} {displayStatus.count === 1 ? 'evento' : 'eventos'}
+                {displayStatus.count} {displayStatus.count === 1 ? 'evento PEW' : 'eventos PEW'}
               </span>
             )}
+            
+            {(displayStatus.participacoes || []).map((part, idx) => (
+              <span key={idx} className={`inline-flex items-center gap-1 mt-0.5 rounded-full border px-2 py-0.5 text-[9px] font-black uppercase tracking-tight ${part.color}`}>
+                <span className="text-[10px] leading-none">{part.icon}</span> {part.count} {part.label}
+              </span>
+            ))}
           </div>
         </div>
 

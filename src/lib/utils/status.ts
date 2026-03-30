@@ -9,8 +9,8 @@
  */
 export function computeDisplayStatus(
   manualStatus: string,
-  eventos?: { data_inicio: string; confirmado: boolean }[]
-): { key: string; label: string; color: string; count: number } {
+  eventos?: { data_inicio: string; confirmado: boolean; tipo?: string }[]
+): { key: string; label: string; color: string; count: number; participacoes?: { icon: string; count: number; label: string; color: string }[] } {
   const STATUS_MAP: Record<string, { label: string; color: string }> = {
     a_contatar: { label: 'A Contatar', color: 'bg-gray-100 text-gray-700 border-gray-200' },
     contatado: { label: 'Contatado', color: 'bg-blue-100 text-blue-700 border-blue-200' },
@@ -28,17 +28,36 @@ export function computeDisplayStatus(
 
   const now = new Date()
   const confirmedEvents = eventos.filter(e => e.confirmado)
-  const pastConfirmed = confirmedEvents.filter(e => new Date(e.data_inicio) < now)
-  const futureConfirmed = confirmedEvents.filter(e => new Date(e.data_inicio) >= now)
+  const podcastEvents = confirmedEvents.filter(e => e.tipo === 'podcast')
+  const coreEvents = confirmedEvents.filter(e => e.tipo !== 'podcast')
+
+  const pastConfirmed = coreEvents.filter(e => new Date(e.data_inicio) < now)
+  const futureConfirmed = coreEvents.filter(e => new Date(e.data_inicio) >= now)
+
+  let mainKey = manualStatus
+  let mainStatus = STATUS_MAP[manualStatus] || STATUS_MAP.a_contatar
+  let count = 0
 
   if (futureConfirmed.length > 0) {
-    return { key: 'confirmado', ...STATUS_MAP.confirmado, count: confirmedEvents.length }
+    mainKey = 'confirmado'
+    mainStatus = STATUS_MAP.confirmado
+    count = coreEvents.length
+  } else if (pastConfirmed.length > 0) {
+    mainKey = 'ja_participou'
+    mainStatus = STATUS_MAP.ja_participou
+    count = pastConfirmed.length
   }
 
-  if (pastConfirmed.length > 0) {
-    return { key: 'ja_participou', ...STATUS_MAP.ja_participou, count: pastConfirmed.length }
+  const participacoes = []
+  
+  if (podcastEvents.length > 0) {
+    participacoes.push({
+      icon: '🎙️',
+      count: podcastEvents.length,
+      label: podcastEvents.length === 1 ? 'Podcast' : 'Podcasts',
+      color: 'bg-[#ffeedd] text-[#e67e22] border-[#f2d0a9]'
+    })
   }
 
-  const s = STATUS_MAP[manualStatus] || STATUS_MAP.a_contatar
-  return { key: manualStatus, ...s, count: 0 }
+  return { key: mainKey, ...mainStatus, count, participacoes }
 }
