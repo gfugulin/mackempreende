@@ -411,7 +411,7 @@ export default function EventoForm({ initialData, currentSquad, onSuccess }: Eve
           {/* Seção de Expositores (apenas para feiras) */}
           {isFeira && (
             <section className="bg-white p-6 md:p-8 rounded-[40px] border border-gray-100 shadow-sm space-y-6">
-              <div className="flex items-center justify-between">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <div className="flex items-center gap-3">
                   <div className="w-10 h-10 rounded-2xl bg-emerald-50 flex items-center justify-center text-emerald-600">
                     <Store className="h-5 w-5" />
@@ -421,7 +421,7 @@ export default function EventoForm({ initialData, currentSquad, onSuccess }: Eve
                 <button
                   type="button"
                   onClick={() => appendExpositor({ nome: '', stand: '', ativacao: '', contato: '' })}
-                  className="flex items-center gap-2 px-5 py-2 bg-emerald-600 text-white rounded-2xl text-xs font-black hover:bg-emerald-700 transition-all shadow-lg shadow-emerald-600/20"
+                  className="w-full sm:w-auto flex items-center justify-center gap-2 px-5 py-2 bg-emerald-600 text-white rounded-2xl text-xs font-black hover:bg-emerald-700 transition-all shadow-lg shadow-emerald-600/20"
                 >
                   <Plus className="h-4 w-4" /> EMPRESA
                 </button>
@@ -481,7 +481,7 @@ export default function EventoForm({ initialData, currentSquad, onSuccess }: Eve
 
           {/* Seção de Empresas e Parceiros */}
           <section className="bg-white p-6 md:p-8 rounded-[40px] border border-gray-100 shadow-sm space-y-8">
-            <div className="flex items-center justify-between">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-2xl bg-blue-50 flex items-center justify-center text-blue-600">
                   <Building2 className="h-5 w-5" />
@@ -491,7 +491,7 @@ export default function EventoForm({ initialData, currentSquad, onSuccess }: Eve
               <button 
                 type="button"
                 onClick={() => appendPartner({ nome: '', contribuicao: '', logo_url: '', tipo: 'apoio' })}
-                className="flex items-center gap-2 px-6 py-2 bg-blue-600 text-white rounded-2xl text-xs font-black hover:bg-blue-700 transition-all shadow-lg shadow-blue-600/20"
+                className="w-full sm:w-auto flex items-center justify-center gap-2 px-6 py-2 bg-blue-600 text-white rounded-2xl text-xs font-black hover:bg-blue-700 transition-all shadow-lg shadow-blue-600/20"
               >
                 <Plus className="h-4 w-4" /> ADICIONAR MARCA
               </button>
@@ -571,7 +571,7 @@ export default function EventoForm({ initialData, currentSquad, onSuccess }: Eve
 
           {/* Seção de Documentos Importantes */}
           <section className="bg-white p-6 md:p-8 rounded-[40px] border border-gray-100 shadow-sm space-y-6">
-            <div className="flex items-center justify-between">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-2xl bg-violet-50 flex items-center justify-center text-violet-600">
                   <FileText className="h-5 w-5" />
@@ -581,7 +581,7 @@ export default function EventoForm({ initialData, currentSquad, onSuccess }: Eve
               <button
                 type="button"
                 onClick={() => appendDoc("")}
-                className="flex items-center gap-2 px-5 py-2 bg-violet-600 text-white rounded-2xl text-xs font-black hover:bg-violet-700 transition-all shadow-lg shadow-violet-600/20"
+                className="w-full sm:w-auto flex items-center justify-center gap-2 px-5 py-2 bg-violet-600 text-white rounded-2xl text-xs font-black hover:bg-violet-700 transition-all shadow-lg shadow-violet-600/20"
               >
                 <Plus className="h-4 w-4" /> DOCUMENTO
               </button>
@@ -611,7 +611,7 @@ export default function EventoForm({ initialData, currentSquad, onSuccess }: Eve
           {/* Seção de Cronograma (Sessões) — apenas para edição de eventos-pai */}
           {isEditMode && !isSessao && (
             <section className="bg-white p-6 md:p-8 rounded-[40px] border border-gray-100 shadow-sm space-y-6">
-              <div className="flex items-center justify-between">
+              <div className="flex flex-col sm:flex-row sm:items-start sm:items-center justify-between gap-4">
                 <div className="flex items-center gap-3">
                   <div className="w-10 h-10 rounded-2xl bg-indigo-50 flex items-center justify-center text-indigo-600">
                     <ListOrdered className="h-5 w-5" />
@@ -625,7 +625,7 @@ export default function EventoForm({ initialData, currentSquad, onSuccess }: Eve
                   <button
                     type="button"
                     onClick={() => setShowSessaoForm(true)}
-                    className="flex items-center gap-2 px-5 py-2 bg-indigo-600 text-white rounded-2xl text-xs font-black hover:bg-indigo-700 transition-all shadow-lg shadow-indigo-600/20"
+                    className="w-full sm:w-auto flex items-center justify-center gap-2 px-5 py-2 bg-indigo-600 text-white rounded-2xl text-xs font-black hover:bg-indigo-700 transition-all shadow-lg shadow-indigo-600/20"
                   >
                     <Plus className="h-4 w-4" /> SESSÃO
                   </button>
