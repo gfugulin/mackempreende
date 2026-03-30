@@ -158,7 +158,7 @@ export async function getPalestranteById(id: string) {
   // Buscamos eventos confirmados para o histórico
   const { data: eventos, error: eError } = await supabase
     .from('eventos')
-    .select('id, titulo, data_inicio, tipo, squad, metadata, confirmado')
+    .select('id, titulo, data_inicio, tipo, squad, metadata, confirmado, palestrante_id')
     .order('data_inicio', { ascending: false })
 
   if (eError) {
