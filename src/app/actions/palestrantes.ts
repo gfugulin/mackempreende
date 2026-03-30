@@ -108,10 +108,14 @@ export async function searchPalestrantesByName(query: string) {
 }
 
 /**
- * Busca palestrantes com filtros e eventos vinculados (Server Component Ready)
+ * Busca palestrantes com filtros e eventos vinculados.
+ * Combina eventos via FK (palestrante_id) com participações via metadata (formato v3)
+ * para que co-palestrantes também exibam o badge "Já Participou" corretamente.
  */
 export async function getPalestrantes(filters?: { squad?: string; search?: string }) {
   const supabase = (await createClient()) as SupabaseClient<Database>
+
+  // 1. Busca palestrantes com eventos vinculados via FK
   let query = supabase
     .from('palestrantes')
     .select('*, eventos(id, data_inicio, confirmado)')
@@ -125,14 +129,52 @@ export async function getPalestrantes(filters?: { squad?: string; search?: strin
     query = query.ilike('nome', `%${filters.search}%`)
   }
 
-  const { data, error } = await query
+  const { data: palestrantes, error } = await query
   
   if (error) {
     console.error('Error fetching speakers:', error)
     return []
   }
 
-  return data as any[]
+  // 2. Busca TODOS os eventos para cruzar com metadata (co-palestrantes)
+  const { data: todosEventos } = await supabase
+    .from('eventos')
+    .select('id, data_inicio, confirmado, metadata, palestrante_id')
+
+  if (!todosEventos || todosEventos.length === 0) {
+    return palestrantes as any[]
+  }
+
+  // 3. Para cada palestrante, verifica se ele aparece no metadata de algum evento
+  //    que NÃO está vinculado a ele via FK (evita contagem dupla)
+  const enriched = (palestrantes as any[]).map((p: any) => {
+    const fkEventIds = new Set((p.eventos || []).map((e: any) => e.id))
+    
+    const metadataEvents = todosEventos.filter((evt: any) => {
+      // Já está na lista de FK? Pula para não contar 2x
+      if (fkEventIds.has(evt.id)) return false
+      // Já é o palestrante_id deste evento? Pula (deveria estar no FK)
+      if (evt.palestrante_id === p.id) return false
+      
+      // Verifica se o nome aparece no metadata
+      const metaStr = JSON.stringify(evt.metadata || {})
+      return metaStr.includes(p.nome)
+    })
+
+    // Mescla os eventos: FK + metadata
+    const allEvents = [
+      ...(p.eventos || []),
+      ...metadataEvents.map((e: any) => ({
+        id: e.id,
+        data_inicio: e.data_inicio,
+        confirmado: e.confirmado
+      }))
+    ]
+
+    return { ...p, eventos: allEvents }
+  })
+
+  return enriched
 }
 
 
