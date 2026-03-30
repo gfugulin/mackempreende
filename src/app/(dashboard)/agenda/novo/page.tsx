@@ -2,7 +2,6 @@ import PageHeader from '@/components/layout/PageHeader'
 import EventoForm from '@/components/agenda/EventoForm'
 import { createClient } from '@/lib/supabase/server'
 import { getSquadFromEmail } from '@/lib/auth/get-squad'
-import { getPalestrantes } from '@/app/actions/palestrantes'
 import { ChevronLeft } from 'lucide-react'
 import Link from 'next/link'
 
@@ -10,7 +9,6 @@ export default async function NovoEventoPage() {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   const currentSquad = user?.email ? getSquadFromEmail(user.email) : 'PEW'
-  const palestrantes = await getPalestrantes()
 
   return (
     <>
@@ -38,7 +36,6 @@ export default async function NovoEventoPage() {
 
           <EventoForm 
             currentSquad={currentSquad ?? 'Global'} 
-            palestrantes={palestrantes as any}
           />
         </div>
       </div>

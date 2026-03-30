@@ -8,8 +8,8 @@ import { SupabaseClient } from '@supabase/supabase-js'
 
 /**
  * Cria um novo evento e sincroniza automaticamente os palestrantes vinculados.
- * - Palestrante principal: atualiza status conforme confirmação do evento
- * - Palestrantes extras (metadata): registra automaticamente na tabela palestrantes
+ * - Palestrantes com `id` existente: atualiza status se evento confirmado
+ * - Palestrantes sem `id` (novo nome): cria registro no diretório via upsert
  */
 export async function createEvento(data: EventoInput) {
   const supabase = (await createClient()) as SupabaseClient<Database>
@@ -30,39 +30,41 @@ export async function createEvento(data: EventoInput) {
     return { error: 'Erro ao salvar evento na agenda.' }
   }
 
-  // === AUTO-SYNC: Palestrante Principal ===
-  if (result.data.palestrante_id && result.data.confirmado) {
-    await (supabase as any)
-      .from('palestrantes')
-      .update({ status: 'confirmado' })
-      .eq('id', result.data.palestrante_id)
-  }
+  // === AUTO-SYNC: Palestrantes vinculados → Diretório ===
+  const palestrantes = result.data.metadata?.palestrantes || []
+  const syncedNew: string[] = []
 
-  // === AUTO-SYNC: Palestrantes Extras → Registros reais ===
-  const extras = result.data.metadata?.palestrantes_extras || []
-  const syncedExtras: string[] = []
+  for (const p of palestrantes) {
+    if (p.is_backup) continue // Reservas não alteram status
 
-  for (const nomeExtra of extras) {
-    if (!nomeExtra || typeof nomeExtra !== 'string' || nomeExtra.trim().length < 2) continue
-    const nomeLimpo = nomeExtra.trim()
-
-    // Busca por nome (case-insensitive) para evitar duplicatas
-    const { data: existing } = await (supabase as any)
-      .from('palestrantes')
-      .select('id, nome')
-      .ilike('nome', nomeLimpo)
-      .single()
-
-    if (!existing) {
-      // Criar novo palestrante com status baseado na confirmação do evento
-      await (supabase as any)
+    if (p.id) {
+      // Palestrante existente: atualizar status se confirmado
+      if (result.data.confirmado) {
+        await (supabase as any)
+          .from('palestrantes')
+          .update({ status: 'confirmado' })
+          .eq('id', p.id)
+      }
+    } else if (p.nome && p.nome.trim().length >= 2) {
+      // Palestrante novo: buscar por nome (case-insensitive) para evitar duplicatas
+      const nomeLimpo = p.nome.trim()
+      const { data: existing } = await (supabase as any)
         .from('palestrantes')
-        .insert([{
-          nome: nomeLimpo,
-          squad_resp: result.data.squad,
-          status: result.data.confirmado ? 'confirmado' : 'a_contatar',
-        }])
-      syncedExtras.push(nomeLimpo)
+        .select('id, nome')
+        .ilike('nome', nomeLimpo)
+        .single()
+
+      if (!existing) {
+        await (supabase as any)
+          .from('palestrantes')
+          .insert([{
+            nome: nomeLimpo,
+            empresa: p.empresa || null,
+            squad_resp: result.data.squad,
+            status: result.data.confirmado ? 'confirmado' : 'a_contatar',
+          }])
+        syncedNew.push(nomeLimpo)
+      }
     }
   }
 
@@ -70,10 +72,9 @@ export async function createEvento(data: EventoInput) {
   revalidatePath('/palestrantes')
   return { 
     success: true, 
-    syncedExtras: syncedExtras.length > 0 ? syncedExtras : undefined 
+    syncedExtras: syncedNew.length > 0 ? syncedNew : undefined 
   }
 }
-
 
 /**
  * Busca eventos ordenados por data (Timeline Ready)
@@ -125,7 +126,7 @@ export async function getEventoById(id: string) {
 }
 
 /**
- * Atualiza um evento existente.
+ * Atualiza um evento existente e sincroniza palestrantes novos.
  */
 export async function updateEvento(id: string, data: EventoInput) {
   const supabase = (await createClient()) as SupabaseClient<Database>
@@ -145,7 +146,32 @@ export async function updateEvento(id: string, data: EventoInput) {
     return { error: 'Erro ao atualizar evento.' }
   }
 
+  // Sincronizar palestrantes novos no update também
+  const palestrantes = result.data.metadata?.palestrantes || []
+  for (const p of palestrantes) {
+    if (!p.id && p.nome && p.nome.trim().length >= 2) {
+      const nomeLimpo = p.nome.trim()
+      const { data: existing } = await (supabase as any)
+        .from('palestrantes')
+        .select('id')
+        .ilike('nome', nomeLimpo)
+        .single()
+
+      if (!existing) {
+        await (supabase as any)
+          .from('palestrantes')
+          .insert([{
+            nome: nomeLimpo,
+            empresa: p.empresa || null,
+            squad_resp: result.data.squad,
+            status: result.data.confirmado ? 'confirmado' : 'a_contatar',
+          }])
+      }
+    }
+  }
+
   revalidatePath('/agenda')
+  revalidatePath('/palestrantes')
   revalidatePath(`/agenda/${id}/editar`)
   return { success: true }
 }

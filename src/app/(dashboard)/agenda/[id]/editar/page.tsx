@@ -1,5 +1,4 @@
 import { getEventoById } from '@/app/actions/eventos'
-import { getPalestrantes } from '@/app/actions/palestrantes'
 import EventoForm from '@/components/agenda/EventoForm'
 import { createClient } from '@/lib/supabase/server'
 import { getSquadFromEmail } from '@/lib/auth/get-squad'
@@ -16,7 +15,6 @@ export default async function EditarEventoPage({ params }: EditarEventoPageProps
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   const currentSquad = ((user?.email ? getSquadFromEmail(user.email) : 'PEW') || 'PEW') as string
-  const palestrantes = await getPalestrantes()
   const evento = await getEventoById(id)
 
   if (!evento) {
@@ -58,7 +56,6 @@ export default async function EditarEventoPage({ params }: EditarEventoPageProps
           <EventoForm 
             initialData={evento as any} 
             currentSquad={currentSquad}
-            palestrantes={palestrantes as any}
           />
         </div>
       </main>

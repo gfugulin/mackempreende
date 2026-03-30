@@ -14,7 +14,8 @@ export type TipoEvento =
   | 'palestra'
   | 'podcast'
   | 'evento_externo'
-  | 'reuniao_interna';
+  | 'reuniao_interna'
+  | 'feira';
 
 export interface Database {
   public: {

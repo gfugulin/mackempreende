@@ -58,8 +58,11 @@ export default function EventDetailsModal({ day, eventos, isOpen, onClose }: Eve
           ) : (
             eventos.map(evento => {
               const meta = (evento.metadata as any) || {}
-              const extraSpeakers = meta.palestrantes_extras || []
-              const backupSpeakers = meta.palestrantes_backup || []
+              const allSpeakers = meta.palestrantes || []
+              const mainSpeakers = allSpeakers.filter((p: any) => !p.is_backup)
+              const backupSpeakers = allSpeakers.filter((p: any) => p.is_backup)
+              const legacyExtras = meta.palestrantes_extras || []
+              const legacyBackups = meta.palestrantes_backup || []
               const partners = meta.parceiros || []
 
               return (
@@ -109,27 +112,38 @@ export default function EventDetailsModal({ day, eventos, isOpen, onClose }: Eve
                     </div>
                   </div>
 
-                  {/* Main and Extra Speakers */}
+                  {/* Palestrantes (novo formato + legado) */}
                   <div className="space-y-4 pt-6 border-t border-gray-50">
-                    <div className="flex items-center gap-4">
-                      {evento.palestrantes ? (
-                        <>
-                          <div className="w-10 h-10 rounded-full bg-gray-900 flex items-center justify-center text-white text-xs font-black shadow-lg shadow-gray-200">
-                            {evento.palestrantes.nome.substring(0, 2).toUpperCase()}
-                          </div>
-                          <div>
-                            <p className="text-[10px] font-black text-gray-300 uppercase tracking-widest leading-none mb-1">Convidado Principal</p>
-                            <p className="text-sm font-black text-gray-900">{evento.palestrantes.nome}</p>
-                          </div>
-                        </>
-                      ) : (
-                        <p className="text-xs font-bold text-gray-400 uppercase tracking-widest">Sem palestrante principal definido</p>
-                      )}
-                    </div>
+                    {/* Palestrante vinculado via FK antiga */}
+                    {evento.palestrantes ? (
+                      <div className="flex items-center gap-4">
+                        <div className="w-10 h-10 rounded-full bg-gray-900 flex items-center justify-center text-white text-xs font-black shadow-lg shadow-gray-200">
+                          {evento.palestrantes.nome.substring(0, 2).toUpperCase()}
+                        </div>
+                        <div>
+                          <p className="text-[10px] font-black text-gray-300 uppercase tracking-widest leading-none mb-1">Convidado Principal</p>
+                          <p className="text-sm font-black text-gray-900">{evento.palestrantes.nome}</p>
+                        </div>
+                      </div>
+                    ) : mainSpeakers.length === 0 && legacyExtras.length === 0 ? (
+                      <p className="text-xs font-bold text-gray-400 uppercase tracking-widest">Sem palestrante definido</p>
+                    ) : null}
 
-                    {extraSpeakers.length > 0 && (
+                    {/* Palestrantes principais (novo formato) */}
+                    {mainSpeakers.length > 0 && (
                       <div className="flex flex-wrap gap-3 pl-2 border-l-2 border-dashed border-gray-100 py-1">
-                        {extraSpeakers.map((s: string, i: number) => (
+                        {mainSpeakers.map((s: any, i: number) => (
+                          <div key={i} className="flex items-center gap-2 text-[10px] font-black text-gray-500 uppercase">
+                            <UserPlus className="h-3 w-3" /> {s.nome}
+                          </div>
+                        ))}
+                      </div>
+                    )}
+
+                    {/* Retrocompatibilidade: extras antigos */}
+                    {legacyExtras.length > 0 && (
+                      <div className="flex flex-wrap gap-3 pl-2 border-l-2 border-dashed border-gray-100 py-1">
+                        {legacyExtras.map((s: string, i: number) => (
                           <div key={i} className="flex items-center gap-2 text-[10px] font-black text-gray-500 uppercase">
                             <UserPlus className="h-3 w-3" /> {s}
                           </div>
@@ -137,13 +151,30 @@ export default function EventDetailsModal({ day, eventos, isOpen, onClose }: Eve
                       </div>
                     )}
 
+                    {/* Reservas (novo formato) */}
                     {backupSpeakers.length > 0 && (
+                      <div className="pt-2">
+                        <p className="text-[9px] font-black text-orange-400 uppercase tracking-widest mb-2 flex items-center gap-2">
+                          <ShieldPlus className="h-3 w-3" /> Reservas
+                        </p>
+                        <div className="flex flex-wrap gap-2">
+                          {backupSpeakers.map((s: any, i: number) => (
+                            <span key={i} className="px-3 py-1 bg-orange-50 text-orange-600 rounded-lg text-[9px] font-black border border-orange-100">
+                              {s.nome}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Retrocompatibilidade: backups antigos */}
+                    {legacyBackups.length > 0 && (
                       <div className="pt-2">
                         <p className="text-[9px] font-black text-orange-400 uppercase tracking-widest mb-2 flex items-center gap-2">
                           <ShieldPlus className="h-3 w-3" /> Reservas/Backups
                         </p>
                         <div className="flex flex-wrap gap-2">
-                          {backupSpeakers.map((s: string, i: number) => (
+                          {legacyBackups.map((s: string, i: number) => (
                             <span key={i} className="px-3 py-1 bg-orange-50 text-orange-600 rounded-lg text-[9px] font-black border border-orange-100">
                               {s}
                             </span>

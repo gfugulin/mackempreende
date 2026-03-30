@@ -25,17 +25,28 @@ const TIPO_COLORS: Record<string, { bg: string, text: string, border: string }> 
   'podcast': { bg: 'bg-orange-50', text: 'text-orange-700', border: 'border-orange-100' },
   'evento_externo': { bg: 'bg-emerald-50', text: 'text-emerald-700', border: 'border-emerald-100' },
   'reuniao_interna': { bg: 'bg-gray-50', text: 'text-gray-700', border: 'border-gray-100' },
+  'feira': { bg: 'bg-teal-50', text: 'text-teal-700', border: 'border-teal-100' },
 }
 
 export default function EventoItem({ evento, isFirst, isLast }: EventoItemProps) {
   const date = new Date(evento.data_inicio)
   const colors = TIPO_COLORS[evento.tipo] || TIPO_COLORS['reuniao_interna']
   
-  // Extração segura de metadados
+  // Extração segura de metadados (compatível com formato novo e antigo)
   const meta = (evento.metadata as any) || {}
-  const extraSpeakers = meta.palestrantes_extras || []
-  const backupSpeakers = meta.palestrantes_backup || []
+  
+  // Novo formato unificado
+  const allSpeakers = meta.palestrantes || []
+  const mainSpeakers = allSpeakers.filter((p: any) => !p.is_backup)
+  const backupSpeakers = allSpeakers.filter((p: any) => p.is_backup)
+  
+  // Retrocompatibilidade: formato antigo
+  const legacyExtras = meta.palestrantes_extras || []
+  const legacyBackups = meta.palestrantes_backup || []
+  
   const partners = meta.parceiros || []
+  const expositores = meta.expositores || []
+  const documentos = meta.documentos_importantes || []
 
   return (
     <div className="flex gap-3 sm:gap-6 group animate-in fade-in slide-in-from-left-4 duration-500">
@@ -122,17 +133,30 @@ export default function EventoItem({ evento, isFirst, isLast }: EventoItemProps)
             )}
           </div>
 
-          {/* Extras and Backups Section */}
-          {(extraSpeakers.length > 0 || backupSpeakers.length > 0) && (
+          {/* Palestrantes Section (novo formato + retrocompatibilidade) */}
+          {(mainSpeakers.length > 0 || backupSpeakers.length > 0 || legacyExtras.length > 0 || legacyBackups.length > 0) && (
             <div className="mt-6 flex flex-wrap gap-4">
-              {extraSpeakers.map((s: string, idx: number) => (
-                <div key={idx} className="flex items-center gap-2 px-3 py-1.5 bg-gray-50 rounded-xl border border-gray-100">
+              {mainSpeakers.map((s: any, idx: number) => (
+                <div key={`main-${idx}`} className="flex items-center gap-2 px-3 py-1.5 bg-gray-50 rounded-xl border border-gray-100">
+                  <UserPlus className="h-3 w-3 text-gray-400" />
+                  <span className="text-[10px] font-black text-gray-600 uppercase tracking-tighter">{s.nome}</span>
+                </div>
+              ))}
+              {backupSpeakers.map((s: any, idx: number) => (
+                <div key={`backup-${idx}`} className="flex items-center gap-2 px-3 py-1.5 bg-orange-50 rounded-xl border border-orange-100">
+                  <ShieldPlus className="h-3 w-3 text-orange-400" />
+                  <span className="text-[10px] font-black text-orange-600 uppercase tracking-tighter">{s.nome} (Reserva)</span>
+                </div>
+              ))}
+              {/* Retrocompatibilidade: formato antigo */}
+              {legacyExtras.map((s: string, idx: number) => (
+                <div key={`leg-${idx}`} className="flex items-center gap-2 px-3 py-1.5 bg-gray-50 rounded-xl border border-gray-100">
                   <UserPlus className="h-3 w-3 text-gray-400" />
                   <span className="text-[10px] font-black text-gray-600 uppercase tracking-tighter">{s}</span>
                 </div>
               ))}
-              {backupSpeakers.map((s: string, idx: number) => (
-                <div key={idx} className="flex items-center gap-2 px-3 py-1.5 bg-orange-50 rounded-xl border border-orange-100">
+              {legacyBackups.map((s: string, idx: number) => (
+                <div key={`legb-${idx}`} className="flex items-center gap-2 px-3 py-1.5 bg-orange-50 rounded-xl border border-orange-100">
                   <ShieldPlus className="h-3 w-3 text-orange-400" />
                   <span className="text-[10px] font-black text-orange-600 uppercase tracking-tighter">{s} (Backup)</span>
                 </div>

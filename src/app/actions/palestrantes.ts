@@ -78,6 +78,36 @@ export async function deletePalestrante(id: string) {
 }
 
 /**
+ * Busca palestrantes por nome (fuzzy) para autocomplete no formulário de eventos.
+ * Retorna dados essenciais + contagem de eventos para feedback de histórico.
+ */
+export async function searchPalestrantesByName(query: string) {
+  if (!query || query.trim().length < 2) return []
+  
+  const supabase = (await createClient()) as SupabaseClient<Database>
+  
+  const { data, error } = await supabase
+    .from('palestrantes')
+    .select('id, nome, empresa, cargo, eventos(id)')
+    .ilike('nome', `%${query.trim()}%`)
+    .order('nome')
+    .limit(8)
+
+  if (error) {
+    console.error('Error searching speakers:', error)
+    return []
+  }
+
+  return (data || []).map((p: any) => ({
+    id: p.id,
+    nome: p.nome,
+    empresa: p.empresa,
+    cargo: p.cargo,
+    eventCount: p.eventos?.length || 0,
+  }))
+}
+
+/**
  * Busca palestrantes com filtros e eventos vinculados (Server Component Ready)
  */
 export async function getPalestrantes(filters?: { squad?: string; search?: string }) {
