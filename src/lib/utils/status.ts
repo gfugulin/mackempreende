@@ -57,6 +57,15 @@ export function computeDisplayStatus(
       label: podcastEvents.length === 1 ? 'Podcast' : 'Podcasts',
       color: 'bg-[#ffeedd] text-[#e67e22] border-[#f2d0a9]'
     })
+
+    // Lógica Dinâmica (Opção 3): Substituir o status cinza por uma tag de funil de Prospect (Lead)
+    if (mainKey === 'a_contatar') {
+      mainStatus = { 
+        ...mainStatus, 
+        label: 'Lead PEW', 
+        color: 'bg-indigo-50 text-indigo-700 border-indigo-100' 
+      }
+    }
   }
 
   return { key: mainKey, ...mainStatus, count, participacoes }

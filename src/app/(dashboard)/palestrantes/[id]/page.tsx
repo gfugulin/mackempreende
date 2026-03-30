@@ -2,6 +2,7 @@
 import { getPalestranteById } from '@/app/actions/palestrantes'
 import PageHeader from '@/components/layout/PageHeader'
 import { createClient } from '@/lib/supabase/server'
+import { computeDisplayStatus } from '@/lib/utils/status'
 import { getSquadFromEmail } from '@/lib/auth/get-squad'
 import { 
   Link2, 
@@ -39,14 +40,7 @@ export default async function PalestranteDetailPage({ params }: Props) {
     notFound()
   }
 
-  const statusColors: any = {
-    'a_contatar': 'bg-gray-100 text-gray-600',
-    'contatado': 'bg-blue-100 text-blue-600',
-    'aguardando_resposta': 'bg-yellow-100 text-yellow-600',
-    'confirmado': 'bg-green-100 text-green-600',
-    'recusado': 'bg-red-100 text-red-600',
-    'cancelado': 'bg-red-50 text-red-400',
-  }
+  const displayStatus = computeDisplayStatus(palestrante.status, palestrante.eventos as any)
 
   return (
     <div className="min-h-screen bg-[#FAFAFA]">
@@ -80,13 +74,24 @@ export default async function PalestranteDetailPage({ params }: Props) {
                </p>
 
                <div className="mt-6 flex flex-wrap justify-center gap-2">
-                 <span className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider ${statusColors[palestrante.status] || 'bg-gray-100'}`}>
-                   {palestrante.status.replace(/_/g, ' ')}
+                 <span className={`px-3 py-1 text-[10px] font-black uppercase tracking-wider rounded-full border ${displayStatus.color}`}>
+                   {displayStatus.key === 'ja_participou' && <Award className="inline-block h-3 w-3 mr-1" />}
+                   {displayStatus.label}
                  </span>
                  <span className="px-3 py-1 rounded-full bg-red-50 text-[#A32D2D] text-[10px] font-black uppercase tracking-wider">
                    Squad {palestrante.squad_resp}
                  </span>
                </div>
+               
+               {displayStatus.participacoes && displayStatus.participacoes.length > 0 && (
+                 <div className="mt-3 flex flex-wrap justify-center gap-2">
+                   {displayStatus.participacoes.map((part, idx) => (
+                     <span key={idx} className={`px-3 py-1 rounded-full border text-[10px] font-black uppercase tracking-wider ${part.color}`}>
+                       {part.icon} {part.count} {part.label}
+                     </span>
+                   ))}
+                 </div>
+               )}
 
                <div className="mt-8">
                  <Link 
