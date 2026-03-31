@@ -48,23 +48,44 @@ export function computeDisplayStatus(
     count = pastConfirmed.length
   }
 
-  const participacoes = []
+  const participacoes: { icon: string; count: number; label: string; color: string }[] = []
   
-  if (podcastEvents.length > 0) {
-    participacoes.push({
-      icon: '🎙️',
-      count: podcastEvents.length,
-      label: podcastEvents.length === 1 ? 'Podcast' : 'Podcasts',
-      color: 'bg-[#ffeedd] text-[#e67e22] border-[#f2d0a9]'
-    })
+  // Categorias nativas e seus estilos visuais (Pastas da Head)
+  const categoryStyles: Record<string, { icon: string; singular: string; plural: string; color: string }> = {
+    podcast: { icon: '🎙️', singular: 'Podcast', plural: 'Podcasts', color: 'bg-[#ffeedd] text-[#e67e22] border-[#f2d0a9]' },
+    semana_empreendedorismo: { icon: '🌟', singular: 'Sem. Empreend.', plural: 'Sem. Empreend.', color: 'bg-indigo-100 text-indigo-700 border-indigo-200' },
+    empreendedorismo_feminino: { icon: '👩‍💼', singular: 'Emp. Feminino', plural: 'Emp. Feminino', color: 'bg-pink-100 text-pink-700 border-pink-200' },
+    aula: { icon: '🎓', singular: 'Aula', plural: 'Aulas', color: 'bg-emerald-100 text-emerald-700 border-emerald-200' },
+    mentoria: { icon: '🤝', singular: 'Mentoria', plural: 'Mentorias', color: 'bg-amber-100 text-amber-700 border-amber-200' },
+    evento_avulso: { icon: '📆', singular: 'Evento Avulso', plural: 'Eventos Avulsos', color: 'bg-gray-100 text-gray-700 border-gray-200' },
+  }
 
-    // Lógica Dinâmica (Opção 3): Substituir o status cinza por uma tag de funil de Prospect (Lead)
-    if (mainKey === 'a_contatar') {
-      mainStatus = { 
-        ...mainStatus, 
-        label: 'Lead PEW', 
-        color: 'bg-indigo-50 text-indigo-700 border-indigo-100' 
-      }
+  // Agrupar contagem de cada tipo especial
+  const categorizedEvents = confirmedEvents.reduce((acc, evt) => {
+    if (!evt.tipo) return acc
+    acc[evt.tipo] = (acc[evt.tipo] || 0) + 1
+    return acc
+  }, {} as Record<string, number>)
+
+  // Construir as "pastas visuais" na ordem
+  Object.entries(categorizedEvents).forEach(([tipo, qtd]) => {
+    const style = categoryStyles[tipo]
+    if (style) {
+      participacoes.push({
+        icon: style.icon,
+        count: qtd,
+        label: qtd === 1 ? style.singular : style.plural,
+        color: style.color
+      })
+    }
+  })
+
+  // Lógica Dinâmica (Opção 3): Substituir o status cinza por uma tag de funil de Prospect se tiver algum evento extra-PEW like Podcast, etc.
+  if (podcastEvents.length > 0 && mainKey === 'a_contatar') {
+    mainStatus = { 
+      ...mainStatus, 
+      label: 'Lead PEW', 
+      color: 'bg-cyan-50 text-cyan-700 border-cyan-100' 
     }
   }
 

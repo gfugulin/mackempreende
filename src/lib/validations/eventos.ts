@@ -8,7 +8,11 @@ export const TipoEventoEnum = z.enum([
   'podcast',
   'evento_externo',
   'reuniao_interna',
-  'feira'
+  'feira',
+  'semana_empreendedorismo',
+  'empreendedorismo_feminino',
+  'mentoria',
+  'evento_avulso'
 ])
 
 export const SquadTipoEnum = z.enum([
