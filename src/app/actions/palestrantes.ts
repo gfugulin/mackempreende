@@ -86,10 +86,11 @@ export async function searchPalestrantesByName(query: string) {
   
   const supabase = (await createClient()) as SupabaseClient<Database>
   
+  const safeSearch = query.trim().replace(/,/g, ' ')
   const { data, error } = await supabase
     .from('palestrantes')
     .select('id, nome, empresa, cargo, eventos(id)')
-    .ilike('nome', `%${query.trim()}%`)
+    .or(`nome.ilike.%${safeSearch}%,empresa.ilike.%${safeSearch}%`)
     .order('nome')
     .limit(8)
 
@@ -126,7 +127,9 @@ export async function getPalestrantes(filters?: { squad?: string; search?: strin
   }
 
   if (filters?.search) {
-    query = query.ilike('nome', `%${filters.search}%`)
+    // Remover vírgulas para evitar problemas de sintaxe no .or() do PostgREST
+    const safeSearch = filters.search.replace(/,/g, ' ')
+    query = query.or(`nome.ilike.%${safeSearch}%,empresa.ilike.%${safeSearch}%`)
   }
 
   const { data: palestrantes, error } = await query

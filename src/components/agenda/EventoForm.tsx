@@ -411,19 +411,19 @@ export default function EventoForm({ initialData, currentSquad, onSuccess }: Eve
           {/* Seção de Expositores (apenas para feiras) */}
           {isFeira && (
             <section className="bg-white p-6 md:p-8 rounded-[40px] border border-gray-100 shadow-sm space-y-6">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-2xl bg-emerald-50 flex items-center justify-center text-emerald-600">
+              <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                <div className="flex items-center gap-3 flex-1 min-w-0">
+                  <div className="w-10 h-10 shrink-0 rounded-2xl bg-emerald-50 flex items-center justify-center text-emerald-600">
                     <Store className="h-5 w-5" />
                   </div>
-                  <h3 className="text-lg font-black text-gray-900 uppercase tracking-tight">Expositores / Empresas</h3>
+                  <h3 className="text-lg font-black text-gray-900 uppercase tracking-tight break-words leading-tight">Expositores / Empresas</h3>
                 </div>
                 <button
                   type="button"
                   onClick={() => appendExpositor({ nome: '', stand: '', ativacao: '', contato: '' })}
-                  className="w-full sm:w-auto flex items-center justify-center gap-2 px-5 py-2 bg-emerald-600 text-white rounded-2xl text-xs font-black hover:bg-emerald-700 transition-all shadow-lg shadow-emerald-600/20"
+                  className="w-full md:w-auto shrink-0 flex items-center justify-center gap-2 px-6 py-3 md:py-2 bg-emerald-600 text-white rounded-2xl text-[11px] font-black hover:bg-emerald-700 transition-all shadow-lg shadow-emerald-600/20 uppercase tracking-widest"
                 >
-                  <Plus className="h-4 w-4" /> EMPRESA
+                  <Plus className="h-4 w-4" /> Empresa
                 </button>
               </div>
 
@@ -481,19 +481,19 @@ export default function EventoForm({ initialData, currentSquad, onSuccess }: Eve
 
           {/* Seção de Empresas e Parceiros */}
           <section className="bg-white p-6 md:p-8 rounded-[40px] border border-gray-100 shadow-sm space-y-8">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-2xl bg-blue-50 flex items-center justify-center text-blue-600">
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+              <div className="flex items-center gap-3 flex-1 min-w-0">
+                <div className="w-10 h-10 shrink-0 rounded-2xl bg-blue-50 flex items-center justify-center text-blue-600">
                   <Building2 className="h-5 w-5" />
                 </div>
-                <h3 className="text-lg font-black text-gray-900 uppercase tracking-tight">Empresas e Ativações</h3>
+                <h3 className="text-lg font-black text-gray-900 uppercase tracking-tight break-words leading-tight">Empresas e Ativações</h3>
               </div>
               <button 
                 type="button"
                 onClick={() => appendPartner({ nome: '', contribuicao: '', logo_url: '', tipo: 'apoio' })}
-                className="w-full sm:w-auto flex items-center justify-center gap-2 px-6 py-2 bg-blue-600 text-white rounded-2xl text-xs font-black hover:bg-blue-700 transition-all shadow-lg shadow-blue-600/20"
+                className="w-full md:w-auto shrink-0 flex items-center justify-center gap-2 px-6 py-3 md:py-2 bg-blue-600 text-white rounded-2xl text-[11px] font-black hover:bg-blue-700 transition-all shadow-lg shadow-blue-600/20 uppercase tracking-widest"
               >
-                <Plus className="h-4 w-4" /> ADICIONAR MARCA
+                <Plus className="h-4 w-4" /> Adicionar Marca
               </button>
             </div>
 
@@ -571,19 +571,19 @@ export default function EventoForm({ initialData, currentSquad, onSuccess }: Eve
 
           {/* Seção de Documentos Importantes */}
           <section className="bg-white p-6 md:p-8 rounded-[40px] border border-gray-100 shadow-sm space-y-6">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-2xl bg-violet-50 flex items-center justify-center text-violet-600">
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+              <div className="flex items-center gap-3 flex-1 min-w-0">
+                <div className="w-10 h-10 shrink-0 rounded-2xl bg-violet-50 flex items-center justify-center text-violet-600">
                   <FileText className="h-5 w-5" />
                 </div>
-                <h3 className="text-lg font-black text-gray-900 uppercase tracking-tight">Documentos Importantes</h3>
+                <h3 className="text-lg font-black text-gray-900 uppercase tracking-tight break-words leading-tight">Documentos Importantes</h3>
               </div>
               <button
                 type="button"
                 onClick={() => appendDoc("")}
-                className="w-full sm:w-auto flex items-center justify-center gap-2 px-5 py-2 bg-violet-600 text-white rounded-2xl text-xs font-black hover:bg-violet-700 transition-all shadow-lg shadow-violet-600/20"
+                className="w-full md:w-auto shrink-0 flex items-center justify-center gap-2 px-6 py-3 md:py-2 bg-violet-600 text-white rounded-2xl text-[11px] font-black hover:bg-violet-700 transition-all shadow-lg shadow-violet-600/20 uppercase tracking-widest"
               >
-                <Plus className="h-4 w-4" /> DOCUMENTO
+                <Plus className="h-4 w-4" /> Documento
               </button>
             </div>
 
@@ -611,23 +611,23 @@ export default function EventoForm({ initialData, currentSquad, onSuccess }: Eve
           {/* Seção de Cronograma (Sessões) — apenas para edição de eventos-pai */}
           {isEditMode && !isSessao && (
             <section className="bg-white p-6 md:p-8 rounded-[40px] border border-gray-100 shadow-sm space-y-6">
-              <div className="flex flex-col sm:flex-row sm:items-start sm:items-center justify-between gap-4">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-2xl bg-indigo-50 flex items-center justify-center text-indigo-600">
+              <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                <div className="flex items-center gap-3 flex-1 min-w-0">
+                  <div className="w-10 h-10 shrink-0 rounded-2xl bg-indigo-50 flex items-center justify-center text-indigo-600">
                     <ListOrdered className="h-5 w-5" />
                   </div>
-                  <div>
-                    <h3 className="text-lg font-black text-gray-900 uppercase tracking-tight">Cronograma</h3>
-                    <p className="text-[9px] font-bold text-gray-400 uppercase tracking-wider">Sessões, palestras e atividades internas</p>
+                  <div className="flex-1 min-w-0">
+                    <h3 className="text-lg font-black text-gray-900 uppercase tracking-tight break-words leading-tight">Cronograma</h3>
+                    <p className="text-[9px] font-bold text-gray-400 uppercase tracking-wider truncate">Sessões, palestras e atividades internas</p>
                   </div>
                 </div>
                 {!showSessaoForm && (
                   <button
                     type="button"
                     onClick={() => setShowSessaoForm(true)}
-                    className="w-full sm:w-auto flex items-center justify-center gap-2 px-5 py-2 bg-indigo-600 text-white rounded-2xl text-xs font-black hover:bg-indigo-700 transition-all shadow-lg shadow-indigo-600/20"
+                    className="w-full md:w-auto shrink-0 flex items-center justify-center gap-2 px-6 py-3 md:py-2 bg-indigo-600 text-white rounded-2xl text-[11px] font-black hover:bg-indigo-700 transition-all shadow-lg shadow-indigo-600/20 uppercase tracking-widest"
                   >
-                    <Plus className="h-4 w-4" /> SESSÃO
+                    <Plus className="h-4 w-4" /> Adicionar Sessão
                   </button>
                 )}
               </div>

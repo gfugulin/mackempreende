@@ -2,7 +2,7 @@ RGs (Reunião Geral)/ eventos 1° semestre:
 
 28/03 - confraternização;
 
-11/04 - dinâmica da Red Bull no escritório da Red Bull;
+11/04 - Dinâmica da Red Bull no escritório da Red Bull;
 
 15/04 - ativação;
 
